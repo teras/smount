@@ -22,4 +22,4 @@ Type "sumount" to unmount a multisession CD
 
 Author:
 
-Panayotis Katsaloulis, teras@linux.gr
+Panayotis Katsaloulis, http://panayotis.com
