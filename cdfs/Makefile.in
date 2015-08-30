@@ -1,0 +1,62 @@
+CC=@CC@
+moddir=@moddir@
+CONFIG_CDFS_VERSION=@CONFIG_CDFS_VERSION@
+kaversion=@kaversion@
+kversion=@kversion@
+kpatchlevel=@kpatchlevel@
+ksublevel=@ksublevel@
+kextraversion=@kextraversion@
+CONFIG_CDFS_KERNELDIR=@CONFIG_CDFS_KERNELDIR@
+CONFIG_CDFS_MVERSION=@CONFIG_CDFS_MVERSION@
+
+CFLAGS=-Wall @c_opts@ -DCONFIG_CDFS_VERSION=\"@CONFIG_CDFS_VERSION@\"
+
+COPTS=$(c_opts) -Wall -Wstrict-prototypes -fomit-frame-pointer -pipe
+
+OBJS=audio.o cdXA.o cddata.o hfs.o iso.o proc.o root.o utils.o daemon.o discid.o
+
+TARGET_OBJ=cdfs.o
+
+ALL=$(TARGET_OBJ)
+
+all: $(ALL)
+
+cdfs.o: $(OBJS)
+	$(LD) -r $(OBJS) -o $@ 	
+
+$(OBJS) $(TARGET_OBJ): cdfs.h
+
+.c.o:
+	$(CC) $(CFLAGS) $(c_opts) -I$(CONFIG_CDFS_KERNELDIR)/include -c $< -Wall
+
+.PHONY: install clean reload tags
+
+install: $(TARGET_OBJ)
+	@INSTALL@ -m755 -d $(moddir)
+	@INSTALL@ -m644 $(TARGET_OBJ) $(moddir)
+	if [ -r $(CONFIG_CDFS_KERNELDIR)/System.map ]; then \
+		depmod -ae -F $(CONFIG_CDFS_KERNELDIR)/System.map $(kaversion); \
+	else \
+		if [ -r /boot/System.map-$(kaversion) ]; then \
+			depmod -ae -F /boot/System.map-$(kaversion) $(kaversion); \
+		else \
+			echo 1>&2 "No System.map found to compare symbols against."; \
+			echo 1>&2 "Using default (running kernel); may fail"; \
+			depmod -ae $(kaversion); \
+		fi; \
+	fi
+
+clean: 
+	-rm -f *.o *~ core tags tags
+
+distclean: clean
+	-rm -f Makefile config.*
+
+reload: cdfs.o
+	-umount /mnt/cdfs
+	-rmmod cdfs
+	insmod -m cdfs.o | tail +10 | grep -v ^00000000 | cat /System.map -> /tmp/map
+	mount /mnt/cdfs
+
+tags: 
+	ctags  *.[ch]

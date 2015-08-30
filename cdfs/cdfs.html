@@ -1,0 +1,335 @@
+
+<html>
+
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta name="Author" content="Michiel Ronsse">
+    <title>CDfs v0.5c</title>
+  </head>
+
+  <body>
+
+    <hr WIDTH="100%">
+
+    <center><img SRC="cdfs.png" ALT="CDfs logo" height=40 width=87></center>
+
+    <hr WIDTH="100%">
+
+    <ul>
+
+      <li><font size=+1>What?</font></li>
+
+      <br>CDfs is a file system for Linux systems that `exports' all tracks and
+      boot images on a CD as normal files. These files can then be mounted (e.g.
+      for ISO and boot images), copied, played (audio and VideoCD tracks)...
+      The primary goal for developing this file system was to `unlock' information
+      <br>in old ISO images. For instance, if you have a multisession CD with
+      two ISO images that both contain the file '<tt>a'</tt>, you only
+      see the file '<tt>a'</tt> in the second session if you use the iso9660
+      file system:
+      <p><tt><font color="#3333FF">[root@k6 /root]# mount -t iso9660 -o ro /dev/cdrom
+	  /mnt/cdrom</font></tt>
+      <p><tt><font color="#3333FF">[root@k6 /root]# ls -l /mnt/cdrom</font></tt>
+      <br><tt><font color="#3333FF">total 2</font></tt>
+      <br><tt><font color="#3333FF">-r-xr-xr-x 1 root
+	  root
+	  2 Aug 8 19:16 a</font></tt>
+      <br><tt><font color="#3333FF">-r-xr-xr-x 1 root
+	  root
+	  2 Aug 8 19:19 b</font></tt>
+      <p>If you mount the CD with the cdfs file system, you get the two sessions
+      as files:
+      <p><tt><font color="#3333FF">[root@k6 /root]# mount -t cdfs -o ro /dev/cdrom
+	  /mnt/cdfs</font></tt>
+      <p><tt><font color="#3333FF">[root@k6 /root]# ls -l /mnt/cdfs</font></tt>
+      <br><tt><font color="#3333FF">total 33389</font></tt>
+      <br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	  ronsse 33503232 Aug 8 19:36 sessions_1-1.iso</font></tt>
+      <br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	  ronsse 34121728 Aug 8 1999 sessions_1-2.iso</font></tt>
+      <p>These files can then be mounted loop back:
+      <p><tt><font color="#3333FF">[root@k6 /root]# mount -t iso9660 -o loop
+	  /cdfs/sessions_1-1.iso /mnt/loop1</font></tt>
+      <p><tt><font color="#3333FF">[root@k6 /root]# mount -t iso9660 -o loop
+	  /cdfs/sessions_1-2.iso /mnt/loop2</font></tt>
+      <p><font color="#000000">and the file <tt>a</tt> can be accessed in both
+	sessions</font>
+      <p><tt><font color="#3333FF">[root@k6 /root]# ls -l /mnt/loop1</font></tt>
+      <br><tt><font color="#3333FF">total 9889</font></tt>
+      <br><tt><font color="#3333FF">-r-xr-xr-x 1 root
+	  root 10104236 Aug 8 17:34 a</font></tt>
+      <p><tt><font color="#3333FF">[root@k6 /root]# ls -l /mnt/loop2</font></tt>
+      <br><tt><font color="#3333FF">total 2</font></tt>
+      <br><tt><font color="#3333FF">-r-xr-xr-x 1 root
+	  root
+	  2 Aug 8 19:16 a</font></tt>
+      <br><tt><font color="#3333FF">-r-xr-xr-x 1 root
+	  root
+	  2 Aug 8 19:19 b</font></tt>
+      <p>The file system also allows you to access data on faulty multi session
+      disks, e.g. disk with multiple single sessions instead of a multi session
+      (for instance created with <tt>mkisofs</tt> without the proper <tt>-C</tt>
+      parameters).
+      <br>
+      <li>
+      <font size=+1>Limitations</font></li>
+
+      <br>Red Book (audio), Yellow Book Mode 1 (data) , Green/White Book Mode
+      2 / XA Form 1 and Green/White Book Mode 2 / XA Form 2 (data) tracks are
+      exported. Other types will be added in the future. Data tracks are checked
+      for ISO, HFS and boot images. If none of these are found, the data track
+      is exported as `unknown`. This version only exports the first HFS and boot
+      image (anybody seen a CD with more than 1 HFS or boot image?).
+      <br>
+      <li>
+      <font size=+1>Download, compile &amp; install</font></li>
+
+      <br>The file system can be downloaded from <a href=download/>here</a>,
+      compiled using <tt>make</tt> and installed using <tt>insmod cdfs.o</tt>.
+      See the file INSTALL for more information.
+      <br>
+      <li>
+      <font size=+1>Usage</font></li>
+
+      <br>Mount a CD with something like
+      <p><tt><font color="#3333FF"> mount -t cdfs -o ro /dev/cdrom
+	  /mnt/cdfs</font></tt>
+      <p>Check <tt>/proc/cdfs</tt> for information about the tracks. The exported
+      files can be found under <tt>/mnt/cdfs</tt> and will have one of these
+      names:
+      <br>
+      <ul>
+	<li>
+	<tt>sessions1_?.iso</tt>: an ISO session. ISO sessions are exported in
+	groups, e.g. if you have a disk with four images, you get</li>
+
+	<br>
+	<p>
+	<p><tt><font color="#3333FF">[root@k6 /root]# mount -t cdfs -o ro /dev/cdrom
+	    /mnt/cdfs</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /root]# ls -l /mnt/cdfs</font></tt>
+	<br><tt><font color="#3333FF">total 0</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 362471424 Mar 10 21:39 sessions_1-1.iso</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 518234112 Apr 10 01:11 sessions_1-2.iso</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 638572544 Jun 19 22:33 sessions_1-3.iso</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 680714240 Jul 21 01:35 sessions_1-4.iso</font></tt>
+	<p>The first file contains the first session, the second file contains
+	sessions 1 &amp; 2, the 3 contains sessions 1, 2 &amp; 3 and the last file
+	contains all the sessions. You can mount all the files/sessions at the
+	same time:
+	<p><tt><font color="#3333FF">[root@k6 /root]# mount -o loop /cdfs/sessions_1-1.iso
+	    /mnt/loop1</font></tt>
+	<br><tt><font color="#3333FF">[root@k6 /root]# mount -o loop /cdfs/sessions_1-2.iso
+	    /mnt/loop2</font></tt>
+	<br><tt><font color="#3333FF">[root@k6 /root]# mount -o loop /cdfs/sessions_1-3.iso
+	    /mnt/loop3</font></tt>
+	<br><tt><font color="#3333FF">[root@k6 /root]# mount -o loop /cdfs/sessions_1-4.iso
+	    /mnt/loop4</font></tt>
+	<br>
+	<li>
+	<tt>session-?.iso: </tt>a single session ISO image. Use the '<tt>single</tt>'
+	option when mounting to access all sessions on a CD as single session images,
+	e.g.:</li>
+
+	<br>
+	<p>
+	<p><tt><font color="#3333FF">[root@k6 /root]# mount -t cdfs -o ro,single
+	    /dev/cdrom /mnt/cdfs</font></tt>
+	<br>
+	<li>
+	<tt>boot.image</tt>: a boot image. Use the <tt>file command </tt>to check
+	the file system on the boot disk and mount it loop back. E.g. (WIN98):</li>
+
+	<br>
+	<p>
+	<p><tt><font color="#3333FF">[root@k6 /root]# mount -t cdfs -o ro /dev/cdrom
+	    /mnt/cdfs</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /root]# ls -l /mnt/cdfs</font></tt>
+	<br><tt><font color="#3333FF">total 0</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 1474560 Jan 1 1970 boot.image</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 654815232 Nov 24 1998 sessions_1-1.iso</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /root]# file /mnt/cdfs/boot.image</font></tt>
+	<br><tt><font color="#3333FF">/mnt/cdfs/boot.image: x86 boot sector, system
+	    )+3EjIHC, FAT (12 bit) unlabeled, 2880 sectors</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /root]# mount -t vfat -o loop /mnt/cdfs/boot.image
+	    /mnt/loop1</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /root]# head /mnt/loop1/autoexec.bat</font></tt>
+	<br><tt><font color="#3333FF">@ECHO OFF</font></tt>
+	<br><tt><font color="#3333FF">set EXPAND=YES</font></tt>
+	<br><tt><font color="#3333FF">SET DIRCMD=/O:N</font></tt>
+	<br><tt><font color="#3333FF">cls</font></tt>
+	<br><tt><font color="#3333FF">set temp=c:\</font></tt>
+	<br><tt><font color="#3333FF">set tmp=c:\</font></tt>
+	<br><tt><font color="#3333FF">path=a:\</font></tt>
+	<p><tt><font color="#3333FF">IF "%config%"=="NOCD" GOTO QUIT</font></tt>
+	<br><tt><font color="#3333FF">LH MSCDEX.EXE /D:oemcd001 /L:D</font></tt>
+	<br>
+	<li>
+	<tt>apple.hfs: </tt>an Apple Hierarchical File System. You can mount it
+	loop back with the <tt>hfs</tt> file system. Example: a CD with one data
+	track containing both an ISO and a HFS file system:</li>
+
+	<br>
+	<p>
+	<p><tt><font color="#000099">[</font><font color="#3333FF">root@k6 /root]#
+	    mount -t cdfs -o ro /dev/cdrom /mnt/cdfs</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /root]# ls -al /mnt/cdfs</font></tt>
+	<br><tt><font color="#3333FF">total 15666</font></tt>
+	<br><tt><font color="#3333FF">dr-xr-xr-x 2 ronsse
+	    ronsse 1234 Aug 14 18:46 .</font></tt>
+	<br><tt><font color="#3333FF">drwxr-xr-x 12 root
+	    root 1024 Jul 24 22:56
+	    ..</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 16008192 Jan 1 1970 apple.hfs</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 61360128 Apr 17 06:18 sessions_1-1.iso</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /root]# mount -t iso9660 -o loop,ro
+	    /mnt/cdfs/sessions_1-1.iso /mnt/loop1</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /root]# mount -t hfs -o loop,ro /mnt/cdfs/apple.hfs
+	    /mnt/loop2</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /root]# ls -a /mnt/loop1</font></tt>
+	<br><tt><font color="#3333FF">. .. autorun.inf files
+	    jpg1024 jpg1152 jpg1280 jpg640 jpg800 setup.exe</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /root]# ls -a /mnt/loop2</font></tt>
+	<br><tt><font color="#3333FF">. .. .finderinfo .resource
+	    .rootinfo AppleShare PDS Desktop DB Desktop DF
+	    M&amp;T ScreenSaver M&amp;T ScreenSaver Data OpenFolderListDF:0d
+	    Trash</font></tt>
+	<br>
+	<li>
+	<tt>videocd-?.mpeg: </tt>a VideoCD track. Use your favourite player to
+	view the contents (mtv[p], plaympeg, gtv, ZZplayer).</li>
+
+	<br>
+	<li>
+	<tt>track-?.wav</tt>: an audio file. The file starts with a WAV-header
+	and can be copied or played (by copying it to the audio device) , e.g.
+
+	<br>
+	<p>
+	<p><tt><font color="#3333FF">[root@k6 /root]# mount -t cdfs -o ro /dev/cdrom
+	    /mnt/cdfs</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /]# ls -l /mnt/cdfs</font></tt>
+	<br><tt><font color="#3333FF">total 0</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 42973392 Aug 8 18:01 track-1.wav</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 65164512 Aug 8 18:01 track-2.wav</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 71743056 Aug 8 18:01 track-3.wav</font></tt>
+	<br><tt><font color="#3333FF">-r--r--r-- 1 ronsse
+	    ronsse 66940272 Aug 8 18:01 track-4.wav</font></tt>
+	<p><tt><font color="#3333FF">[root@k6 /]# sox /mnt/cdfs/track-1.wav -t
+	    ossdsp /dev/dsp</font></tt></li>
+	<li><tt>track-?.raw</tt>: a raw audio track without the WAV header.
+	<p>Note that audio tracks are `exported' by cdfs because they are on the
+	CD. However, cdfs will make no attempt to correct reading errors while
+	reading from scratched disks, to solve misalignment, frame jitter, loss
+	of streaming, etc. You should use <a href="http://www.xiph.org/paranoia/">cdparanoia</a>
+	or <a href="ftp://ftp.gwdg.de/pub/linux/misc/cdda2wav/">cdda2wav</a> if
+	you encounter these problems.
+	<br></ul>
+
+      <li><font size=+1>Related work:</font></li> 
+
+      <ul>
+
+	<li>for audio tracks only:</li>
+
+	<ul>
+
+	  <li><a href="http://fly.cc.fer.hr/~ptolomei/audiofs/">audiofs</a> for Linux</li>
+
+	  <li><a href="http://www.sonicspot.com/alternatecdfsvxd/alternatecdfsvxd.html">CDFS.VXD</a> for Win</li>
+
+	  <li><a href="http://www.bebits.com//app.php3/157">cdda-fs</a> for BeOS</li>
+
+	</ul>
+
+	<li>for VideoCD only:</li>
+
+	<ul>
+
+	  <li>vcdfs, xreadvcd and vcdread for Linux</li>
+
+	</ul>
+
+      </ul>
+
+      <li><font size=+1>History</font></li>
+
+      <ul>
+
+	<li>For kernel 2.2.X:</li>
+
+	<ul>
+
+	  <li>v0.1 (08/21/99): Original Release.</li>
+
+	  <li>v0.2 (10/24/99): Added support for detecting the type of boot image.</li>
+
+	  <li>v0.2b (11/05/99): Solved problem with versioned symbols (thanks to <a href=mailto:bodo@bellut.net>Bodo Bellut</a>).</li>
+
+	  <li>v0.3 (01/06/00): Audio cache is now dynamically allocated. Removed 1/75 seconds of silence from the start of each audio track. Better memory management. Detects more boot images. Changed numbering of audio tracks.</li>
+
+	  <li>v0.3b (01/11/00): Solved problems with systems with multiple CD drives (cache problems).</li>
+
+	  <li>v0.3c (01/17/00): Several bugfixes.</li>
+
+	</ul>
+
+	<li>For kernel 2.4.X:</li>
+
+	<ul>
+
+	  <li>v0.4 (07/27/00) for 2.4.X: Added a kernel thread 'kcdfsd' for asynchronuous I/O and support for VideoCD (thanks to <a href=mailto:b4506055@ken.csie.ntu.edu.tw>Chih-Chung Chang</a>). Karaoke CDs should also work. Uses address_space_operations for all block sizes. Simplified root.c. Support for bigendian CPUs.</li>
+	  <li>v0.41 (09/12/00) adapted for 2.4.0-test8.
+	  <li>v0.42 (01/25/01) support for multiple boot images (thanks to <a href="mailto:olaf.loesken@epost.de">Olaf L&ouml;sken</a>).
+	  <li>v0.5 (02/21/01) usage of ./configure (thanks to <a href="mailto:barsnick@gmx.net">Moritz Barsnick</a>.
+	  <li>v0.5a (02/27/01)
+	  <li>v0.5b (12/27/01) added support for raw tracks (e.g. avi files
+	  written as audio tracks; thanks to <a href="mailto:karpati@optics.szfki.kfki.hu">Attila Karpati</a>). /proc/cdfs now shows the discid for audio CDs. Added kernel patch for compiling cdfs as part of the kernel instead of a stand alone module (thanks to <a href="mailto:jfch@mail.prf.cuni.cz">Jan F. Chadima</a>).
+	  <li>v0.5c (04/07/02) bug fixes
+	</ul>
+
+	<li><font size=+1>Author</font></li>
+
+	<br><a href="mailto:ronsse@elis.rug.ac.be">Michiel Ronsse</a></ul>
+
+      <hr WIDTH="100%">
+
+      <div align=right>10/24/99</div>
+
+
+      <!-- Start of NedStat Basic code -->
+
+      <a href="http://nl.nedstatbasic.net/cgi-bin/viewstat?name=cdfs">
+	<img src="http://nl.nedstatbasic.net/cgi-bin/nedstat.gif?name=cdfs"
+	border=0 alt="" nosave width=22 height=22></a>
+
+      <!-- End of NedStat Basic code -->
+      <!-- Start of ReferStat -->
+
+      <script type="text/javascript" language="JavaScript">
+	<!--
+	d=document;
+	d.write("<img src=\"http://nl.nedstatbasic.net");
+	d.write("/cgi-bin/referstat.gif?");
+	d.write("name=cdfs&refer=");
+	d.write(escape(top.document.referrer));
+	d.write("\" width=1 height=1 align=\"right\">");
+	// -->
+      </script>
+
+      <!-- End of ReferStat -->
+
+
+    </body>
+  </html>

@@ -1,0 +1,55 @@
+diff -urN linux.original/fs/Config.in linux/fs/Config.in
+--- linux.original/fs/Config.in	Mon Jan 15 21:42:32 2001
++++ linux/fs/Config.in	Tue Feb 27 17:03:04 2001
+@@ -20,6 +20,8 @@
+ 
+ dep_tristate 'BFS file system support (EXPERIMENTAL)' CONFIG_BFS_FS $CONFIG_EXPERIMENTAL
+ 
++dep_tristate 'CDFS file system support (EXPERIMENTAL)' CONFIG_CDFS_FS $CONFIG_EXPERIMENTAL
++
+ # msdos file systems
+ tristate 'DOS FAT fs support' CONFIG_FAT_FS
+ dep_tristate '  MSDOS fs support' CONFIG_MSDOS_FS $CONFIG_FAT_FS
+diff -urN linux.original/fs/Makefile linux/fs/Makefile
+--- linux.original/fs/Makefile	Mon Jan 15 21:42:32 2001
++++ linux/fs/Makefile	Tue Feb 27 17:04:17 2001
+@@ -61,6 +61,7 @@
+ subdir-$(CONFIG_REISERFS_FS)	+= reiserfs
+ subdir-$(CONFIG_DEVPTS_FS)	+= devpts
+ subdir-$(CONFIG_SUN_OPENPROMFS)	+= openpromfs
++subdir-$(CONFIG_CDFS_FS)	+= cdfs
+ 
+ 
+ obj-$(CONFIG_BINFMT_AOUT)	+= binfmt_aout.o
+diff -urN linux.original/fs/cdfs/Makefile linux/fs/cdfs/Makefile
+--- linux.original/fs/cdfs/Makefile	Thu Jan  1 01:00:00 1970
++++ linux/fs/cdfs/Makefile	Tue Feb 27 17:03:04 2001
+@@ -0,0 +1,15 @@
++#
++# Makefile for CDFS filesystem.
++#
++# Note! Dependencies are done automagically by 'make dep', which also
++# removes any old dependencies. DON'T put your own dependencies here
++# unless it's something special (ie not a .c file).
++#
++# Note 2! The CFLAGS definitions are now in the main Makefile...
++
++O_TARGET := cdfs.o
++
++obj-y   := audio.o cdXA.o cddata.o hfs.o iso.o proc.o root.o utils.o daemon.o
++obj-m   := $(O_TARGET)
++
++include $(TOPDIR)/Rules.make
+diff -urN linux.original/fs/cdfs/cdfs.h linux/fs/cdfs/cdfs.h
+--- linux.original/fs/cdfs/cdfs.h	Tue Feb 20 23:24:48 2001
++++ linux/fs/cdfs/cdfs.h	Tue Feb 27 17:03:04 2001
+@@ -13,7 +13,7 @@
+ #define __KERNEL__ 
+ 
+ #define FSNAME "cdfs"
+-#define VERSION CONFIG_CDFS_VERSION
++#define VERSION "0.5c"
+ 
+ 
+ #ifdef PRDEBUG
+

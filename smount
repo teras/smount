@@ -1,0 +1,62 @@
+#!/bin/sh
+
+CDROM=/dev/cdrom
+MOUNTPOINT=/mnt/sessions
+
+ISO_POSITION=${MOUNTPOINT}/iso
+
+SES_PREFIX=sessions_1-
+SES_POSTFIX=.iso
+
+
+case $0 in
+	*sumount) ID=umount
+			;;
+	*smount) ID=mount
+			;;
+	*)		ID=mount
+			;;
+esac
+
+if [ "$ID" == "mount" ] ; then
+	mkdir -p ${MOUNTPOINT} || exit 1
+	mkdir -p ${ISO_POSITION} || exit 1
+
+	mount -t cdfs $CDROM $ISO_POSITION || exit 1
+	MAX_SESSION=`ls $ISO_POSITION/sessions*|wc | gawk '{print $1}'`
+	CUR_SESSION=1
+
+
+	echo Installing $MAX_SESSION session\(s\)...
+	while [ $CUR_SESSION -le $MAX_SESSION ] ; do
+		ISO_SESSION=${ISO_POSITION}/${SES_PREFIX}${CUR_SESSION}${SES_POSTFIX}
+		MNT_SESSION=${MOUNTPOINT}/${CUR_SESSION}
+		mkdir -p ${MNT_SESSION} || exit 1
+		echo Creating session directory ${MNT_SESSION}
+		mount -o loop ${ISO_SESSION} ${MNT_SESSION} || exit 1
+		CUR_SESSION=`expr $CUR_SESSION + 1`
+	done
+else
+	MAX_SESSION=`ls $ISO_POSITION/sessions* 2>/dev/null | wc | gawk '{print $1}'`
+	if [ "$MAX_SESSION" == "0" ] ; then
+		echo Not any multi sessions found mounted.
+		exit 1
+	fi
+	CUR_SESSION=1
+
+	echo Uninstalling $MAX_SESSION session\(s\)...
+	while [ $CUR_SESSION -le $MAX_SESSION ] ; do
+		ISO_SESSION=${ISO_POSITION}/${SES_PREFIX}${CUR_SESSION}${SES_POSTFIX}
+		MNT_SESSION=${MOUNTPOINT}/${CUR_SESSION}
+		echo Removing session directory ${MNT_SESSION}
+		umount ${MNT_SESSION} || exit 1
+		rmdir ${MNT_SESSION} || exit 1
+		CUR_SESSION=`expr $CUR_SESSION + 1`
+	done
+
+	umount ${ISO_POSITION} || exit 1
+	rmdir ${ISO_POSITION} || exit 1
+
+	rmdir ${MOUNTPOINT} || exit 1
+fi
+

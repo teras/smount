@@ -1,0 +1,99 @@
+#!/bin/sh
+
+# Edit the following line, if you want to use another version of cdfs, than the
+# one provided. This is a relative directory name of the cdfs sources
+CDFS=cdfs
+
+
+readval () {
+	READVAL_STATUS=false
+	while [ "$READVAL_STATUS" != "true" ] ; do
+		echo -n "$1 [$2]:"
+		read RES
+		if [ "$RES" == "" ] ; then
+			RES=$2
+		fi
+		if [ -e "$RES" ] ; then
+			READVAL_STATUS=true
+		else
+			echo "Directory/File does not exist"
+		fi
+	done
+	unset READVAL_STATUS
+}
+
+
+
+readval "Please give the default root mount point (usually / or /mnt)" "/mnt"
+MOUNTROOT=${RES}
+readval "Please give the CDROM device" "/dev/cdrom"
+CDROM=${RES}
+readval "Please give the binary directory" "/usr/bin"
+BINDIR=${RES}
+
+MOUNTPOINT=${MOUNTROOT}/sessions
+
+
+cat >smount <<EOF
+#!/bin/sh
+
+CDROM=${CDROM}
+MOUNTPOINT=${MOUNTPOINT}
+EOF
+cat >>smount <smount.src
+chmod 755 smount
+
+PROG=${BINDIR}/smount
+PROGU=${BINDIR}/sumount
+cat >Makefile <<EOF
+all:smount cdfs
+
+smount:
+	./configure
+
+cdfs:
+	cd ${CDFS} ; make
+
+install:uninstall
+	cp smount ${PROG}
+	ln -s ${PROG} ${PROGU}
+	cd ${CDFS} ; make install
+
+uninstall:
+	rm -f ${PROG} ${PROGU}
+	if [ -e ${MOUNTPOINT} ] ; then rm -r -f -i $MOUNTPOINT ; fi
+
+clean:
+	rm -f smount
+	cd ${CDFS} ; make clean
+
+distclean:clean
+	rm -f Makefile
+	cd ${CDFS} ; rm -f Makefile config.log config.status config.cache
+
+EOF
+
+
+cd ${CDFS} ; ./configure
+
+echo
+echo "Sessions moint point: $MOUNTPOINT"
+echo "CDROM device: $CDROM"
+echo "Binary Directory: $BINDIR"
+
+cat <<EOF
+
+Some final warnings, before installing "smount".
+
+The install method of Makefile is going to:
+
+ * Delete (if exists) directory $MOUNTPOINT and all its subdirectories
+   (interactively!)
+ * Create anew directory $MOUNTPOINT
+ * Delete (if exists) files ${PROG} and ${PROGU}
+ * Properly create files ${PROG} and ${PROGU}
+
+Now type "make install" to install smount.
+
+EOF
+

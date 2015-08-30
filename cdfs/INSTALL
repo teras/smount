@@ -1,0 +1,105 @@
+CDfs v0.5c       (C) 1999,2000,2001,2002 Michiel Ronsse (ronsse@elis.rug.ac.be)
+----------
+
+
+To compile:
+	
+	./configure
+	make
+	make install
+
+
+To load the filesystem:
+
+	insmod cdfs
+
+
+To obtain information about a mounted cdrom, check
+
+	cat /proc/cdfs
+
+
+Mount a cdrom with something like
+
+	mount -t cdfs -o ro /dev/cdrom /mnt/cdfs
+
+ISO images will show up as "sessions1_?.iso" or "session-?.iso", HFS images as "apple.hfs",
+boot images as "boot.image", VideoCD tracks as "videocd-?.mpeg" and audio tracks as 
+"track-?.wav". ISO, HFS and boot images can be mounted loopback.
+
+You can specify the uid, gid and mode that should be used for the files. E.g
+
+	mount -t cdfs -o ro,uid=0,mode=600 /dev/cdrom /mnt/cdfs
+
+If you don't specify values, default values are used.
+
+Use the option 'single' to export all ISO sessions as single sessions, e.g. for
+accessing data on faulty multi session disks:
+
+	mount -t cdfs -o ro,single /dev/cdrom /mnt/cdfs
+
+Use the option 'raw' to access the raw audio tracks (without the WAV header).
+
+Instead of compiling cdfs as a standalone module, it is also possible
+to include it in the kernel. In order to do this:
+	mkdir /usr/src/linux/fs/cdfs
+	cd /usr/src/linux/fs/cdfs
+	bunzip2 -c cdfsXXX.bz2 | tar xf -
+	mv patch.cdfs /usr/src
+	cd /usr/src
+	patch -p0 < patch.cdfs
+After these steps, configure & compile the kernel in the usual way.	
+
+
+----------------------------------------------------------
+
+E.g.: RedHat 6.0 cdrom:
+
+
+
+[root@k6 /root]# mount -t cdfs -o ro /dev/cdrom /mnt/cdfs
+
+[root@k6 /root]# cat /proc/cdfs
+[cdfs   V0.1]
+
+CD contains 2 tracks:
+
+
+Track 1: data track (sessions_1-1.iso), [0-278028], length=543 MB
+        type: 1 info: CD001 version: 1
+        date: 20/04/1999 time: 01:23:33
+        system: LINUX                           
+        volume: Red Hat Linux/i386 6.0          
+        publisher: 
+        preparer: 
+        application: Red Hat Linux/i386 6.0 
+        length: 543 MB / 543 MB / 543 MB / 543 MB
+
+Bootimage (boot.image), [254332-255051], length=1440 kB
+        ID string:
+
+[root@k6 /root]# ls -l /mnt/cdfs
+total 0
+-r--r--r--   1 ronsse   ronsse     1474560 Jan  1  1970 boot.image
+-r--r--r--   1 ronsse   ronsse   569403392 Apr 20 03:23 sessions_1-1.iso
+
+[root@k6 /root]# file /mnt/cdfs/boot.image 
+/mnt/cdfs/boot.image: x86 boot sector, system SYSLINUX, FAT (12 bit) label: LINUX BOOT , 2880 sectors
+
+[root@k6 /root]# mount -t vfat -o loop /mnt/cdfs/boot.image /mnt/loop1
+
+[root@k6 /root]# mount -t iso9660 -o loop /mnt/cdfs/sessions_1-1.iso /mnt/loop2
+
+[root@k6 /root]# ls /mnt/loop1
+boot.msg  expert.msg  general.msg  initrd.img  kickit.msg  ldlinux.sys  param.msg  rescue.msg  syslinux.cfg  vmlinuz
+
+[root@k6 /root]# ls /mnt/loop2
+COPYING  README  RPM-PGP-KEY  RedHat  TRANS.TBL  boot.cat  doc  dosutils  images  misc  rr_moved
+
+[root@k6 /root]# df
+Filesystem                1k-blocks      Used Available Use% Mounted on
+...
+/dev/sr0                     556058    556058         0 100% /mnt/cdfs
+/mnt/cdfs/boot.image           1423      1388        35  98% /mnt/loop1
+/mnt/cdfs/sessions_1-1.iso   556054    556054         0 100% /mnt/loop2
+
